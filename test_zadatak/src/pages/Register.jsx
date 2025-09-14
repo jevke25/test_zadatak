@@ -1,18 +1,49 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import Header from '../components/Header'
+import { registerUser } from '../services/api'
 
 export default function Register() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [summary, setSummary] = useState('')
-  const [size, setSize] = useState('') // samo za company
-  const [role, setRole] = useState('candidate') // candidate | company
+  const [size, setSize] = useState('')                  // samo za company
+  const [role, setRole] = useState('candidate')         // 'candidate' | 'company'
 
-  function onSubmit(e) {
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const navigate = useNavigate()
+
+  async function onSubmit(e) {
     e.preventDefault()
-    alert(`Submitted as ${role} (UI only). API integration comes next.`)
+    setError('')
+    setLoading(true)
+
+    try {
+      // role UVEK ulazi u payload
+      const payload = {
+        email,
+        password,
+        role,                         // ← ključno
+        name,                         // kandidat: full name; company: company name
+        summary: summary || undefined,
+        size: role === 'company' ? (size || undefined) : undefined
+      }
+
+      const data = await registerUser(payload) // očekuje { token, user: { id, email, role } }
+
+      localStorage.setItem('token', data.token)
+      // fallback: ako backend ne vrati user.role, koristi lokalni role iz state-a
+      const resolvedRole = data?.user?.role || role
+      localStorage.setItem('role', resolvedRole)
+
+      navigate(resolvedRole === 'company' ? '/company' : '/home')
+    } catch (err) {
+      setError(err.message || 'Sign up failed')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -21,62 +52,54 @@ export default function Register() {
       <section className="section">
         <div className="container" style={{ maxWidth: 620 }}>
           <h2 style={{ marginBottom: 8 }}>Create an account</h2>
-          <p
-            style={{
-              color: 'var(--muted)',
-              marginTop: 0,
-              marginBottom: 18
-            }}
-          >
+          <p style={{ color: 'var(--muted)', marginTop: 0, marginBottom: 18 }}>
             Sign up to track your job applications.
           </p>
 
-          <form
-            onSubmit={onSubmit}
-            className="card"
-            style={{ display: 'grid', gap: 12 }}
-          >
+          {error && (
+            <div className="card" style={{ borderColor:'#fecaca', background:'#fef2f2' }}>
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={onSubmit} className="card" style={{ display: 'grid', gap: 12 }}>
             {/* Toggle Candidate/Company */}
             <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
               <button
                 type="button"
                 onClick={() => setRole('candidate')}
-                className={`btn ${
-                  role === 'candidate' ? 'btn-primary' : 'btn-ghost'
-                }`}
+                className={`btn ${role === 'candidate' ? 'btn-primary' : 'btn-ghost'}`}
               >
                 Candidate
               </button>
               <button
                 type="button"
                 onClick={() => setRole('company')}
-                className={`btn ${
-                  role === 'company' ? 'btn-primary' : 'btn-ghost'
-                }`}
+                className={`btn ${role === 'company' ? 'btn-primary' : 'btn-ghost'}`}
               >
                 Company
               </button>
             </div>
 
+            {/* (opciono) Hidden input — čisto ako želiš da vidiš role u Network tabu */}
+            <input type="hidden" name="role" value={role} readOnly />
+
             {/* Conditional fields */}
             {role === 'candidate' ? (
               <>
                 <label>
-                  <div style={{ fontWeight: 600, marginBottom: 6 }}>
-                    Full name
-                  </div>
+                  <div style={{ fontWeight: 600, marginBottom: 6 }}>Full name</div>
                   <input
                     className="input"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Your name"
+                    autoComplete="name"
                     required
                   />
                 </label>
                 <label>
-                  <div style={{ fontWeight: 600, marginBottom: 6 }}>
-                    Short summary (optional)
-                  </div>
+                  <div style={{ fontWeight: 600, marginBottom: 6 }}>Short summary (optional)</div>
                   <textarea
                     className="input"
                     rows={4}
@@ -89,21 +112,18 @@ export default function Register() {
             ) : (
               <>
                 <label>
-                  <div style={{ fontWeight: 600, marginBottom: 6 }}>
-                    Company name
-                  </div>
+                  <div style={{ fontWeight: 600, marginBottom: 6 }}>Company name</div>
                   <input
                     className="input"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Company Inc."
+                    autoComplete="organization"
                     required
                   />
                 </label>
                 <label>
-                  <div style={{ fontWeight: 600, marginBottom: 6 }}>
-                    Company summary (optional)
-                  </div>
+                  <div style={{ fontWeight: 600, marginBottom: 6 }}>Company summary (optional)</div>
                   <textarea
                     className="input"
                     rows={4}
@@ -113,9 +133,7 @@ export default function Register() {
                   />
                 </label>
                 <label>
-                  <div style={{ fontWeight: 600, marginBottom: 6 }}>
-                    Company size
-                  </div>
+                  <div style={{ fontWeight: 600, marginBottom: 6 }}>Company size</div>
                   <select
                     className="input"
                     value={size}
@@ -140,6 +158,7 @@ export default function Register() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
+                autoComplete="email"
                 required
               />
             </label>
@@ -151,18 +170,17 @@ export default function Register() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
+                autoComplete="new-password"
                 required
               />
             </label>
 
             {/* Buttons */}
             <div style={{ display: 'flex', gap: 10 }}>
-              <button className="btn btn-primary" type="submit">
-                Create account
+              <button className="btn btn-primary" type="submit" disabled={loading}>
+                {loading ? 'Creating…' : 'Create account'}
               </button>
-              <Link className="btn btn-ghost" to="/login">
-                Login
-              </Link>
+              <Link className="btn btn-ghost" to="/login">Login</Link>
             </div>
           </form>
 
