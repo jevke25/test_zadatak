@@ -52,3 +52,10 @@ body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui
 /* pills */
 .pills{display:flex;flex-wrap:wrap;gap:10px}
 .pill{background:var(--pill);border:1px solid var(--border);padding:10px 14px;border-radius:999px;display:inline-flex;align-items:center;gap:10px;color:#1f2937;font-weight:600}
+.input, input, textarea, select{
+  width:100%; background:#fff; border:1px solid var(--border);
+  color:var(--text); border-radius:12px; padding:10px 12px; outline:0;
+}
+.input:focus, input:focus, textarea:focus, select:focus{
+  border-color:#b5c7ff; box-shadow:0 0 0 3px rgba(59,130,246,.12);
+}
