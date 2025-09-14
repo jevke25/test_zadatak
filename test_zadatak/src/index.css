@@ -59,3 +59,64 @@ body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui
 .input:focus, input:focus, textarea:focus, select:focus{
   border-color:#b5c7ff; box-shadow:0 0 0 3px rgba(59,130,246,.12);
 }
+.muted{color:var(--muted)}
+.link{color:#1d4ed8;text-decoration:none;font-weight:600}
+.link:hover{text-decoration:underline}
+
+.home-header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px}
+.home-actions{display:flex;gap:10px;flex-wrap:wrap}
+
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.stat{display:flex;flex-direction:column;align-items:flex-start}
+.stat-num{font-size:28px;font-weight:800}
+.stat-label{color:#64748b}
+
+.list-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.apps-list{display:grid;gap:12px}
+.app-row{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:12px}
+.app-title{font-weight:700}
+
+.badge{padding:6px 10px;border-radius:999px;border:1px solid var(--border);font-weight:700;font-size:12px}
+.badge.applied{background:#f0f9ff}
+.badge.interview{background:#ecfeff}
+.badge.offer{background:#ecfdf5}
+.badge.rejected{background:#fef2f2}
+
+.row-actions{display:flex;justify-content:flex-end}
+
+/* Responsive */
+@media (max-width: 960px){
+  .stats-grid{grid-template-columns:1fr 1fr}
+  .app-row{grid-template-columns:1fr auto}
+  .row-actions{grid-column:1 / -1;justify-content:flex-start}
+}
+@media (max-width: 640px){
+  .home-header{flex-direction:column;align-items:flex-start}
+  .stats-grid{grid-template-columns:1fr}
+}
+.clickable{cursor:pointer}
+.company-grid{
+  display:grid;
+  grid-template-columns: 1.2fr 1fr 1fr;
+  gap:16px;
+}
+.jobs-list{display:grid;gap:10px}
+.job-row{
+  display:grid;
+  gap:6px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:12px;
+  transition:box-shadow .15s ease, transform .15s ease;
+}
+.job-row.active{box-shadow:var(--shadow); transform: translateY(-1px)}
+.job-title-input{font-weight:800}
+
+.candidate-details p{color:#475569}
+
+@media (max-width: 1100px){
+  .company-grid{grid-template-columns: 1fr 1fr}
+}
+@media (max-width: 780px){
+  .company-grid{grid-template-columns: 1fr}
+}
