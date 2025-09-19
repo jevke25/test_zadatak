@@ -1,12 +1,118 @@
-# React + Vite
+# Test Zadatak - Job Board Aplikacija
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Opis
+Modernizovana job board aplikacija sa responsive dizajnom, animacijama i OpenAI integracijom za generisanje zahvalnica.
 
-Currently, two official plugins are available:
+## Funkcionalnosti
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### ✨ Animacije
+- Framer Motion animacije kroz celu aplikaciju
+- Smooth hover efekti na kartice i dugmad
+- Staggered animacije za liste elemenata
+- Loading animacije
 
-## Expanding the ESLint configuration
+### 📱 Responsive Dizajn
+- Optimizovano za desktop, tablet i mobilne uređaje
+- Responsive grid sistem
+- Mobile-first pristup
+- Hamburger meni za mobilne uređaje
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### 🤖 OpenAI Integracija
+- Automatsko generisanje zahvalnica kada kandidat aplicira na posao
+- Personalizovane poruke na srpskom jeziku
+- Fallback poruke u slučaju greške API-ja
+
+### 🎯 Ključne Funkcionalnosti
+- Job listing sa detaljnim informacijama
+- Apliciranje na poslove sa instant feedback-om
+- Company dashboard za upravljanje poslovima
+- Candidate dashboard za praćenje aplikacija
+- Responsive search funkcionalnost
+
+## Instalacija i Pokretanje
+
+### Preduslovi
+- Node.js (v16 ili noviji)
+- npm ili yarn
+
+### Koraci
+
+1. **Instaliraj dependencies:**
+```bash
+npm install
+```
+
+2. **Postavi environment varijable:**
+Kreiraj `.env.local` fajl u root direktorijumu:
+```
+VITE_OPENAI_API_KEY=your_openai_api_key_here
+```
+
+3. **Pokreni development server:**
+```bash
+npm run dev
+```
+
+4. **Otvori aplikaciju:**
+Idi na `http://localhost:5173` u browseru
+
+## Struktura Projekta
+
+```
+src/
+├── components/          # React komponente
+│   ├── Header.jsx      # Navigacija sa animacijama
+│   ├── Hero.jsx        # Hero sekcija
+│   ├── JobCard.jsx     # Job kartice sa apliciranjem
+│   ├── SearchBar.jsx   # Search funkcionalnost
+│   └── Categories.jsx  # Kategorije poslova
+├── pages/              # Stranice aplikacije
+│   ├── CandidateHome.jsx # Kandidat dashboard
+│   └── CompanyHome.jsx  # Kompanija dashboard
+├── services/           # API servisi
+│   └── openai.js       # OpenAI integracija
+└── index.css          # Glavni CSS sa responsive stilovima
+```
+
+## Tehnologije
+
+- **React 19** - UI framework
+- **Framer Motion** - Animacije
+- **Axios** - HTTP klijent
+- **OpenAI API** - Generisanje zahvalnica
+- **CSS Grid/Flexbox** - Responsive layout
+- **Vite** - Build tool
+
+## Responsive Breakpoints
+
+- **Desktop:** > 960px
+- **Tablet:** 640px - 960px  
+- **Mobile:** < 640px
+- **Small Mobile:** < 480px
+
+## OpenAI Prompt
+
+Aplikacija koristi sledeći prompt za generisanje zahvalnica:
+
+```
+Generiši profesionalnu zahvalnicu za kandidata koji je aplicirao na posao. 
+
+Detalji:
+- Pozicija: {jobTitle}
+- Kompanija: {companyName}
+- Ime kandidata: {candidateName}
+
+Zahvalnica treba da bude:
+- Profesionalna i topla
+- Kratka (2-3 rečenice)
+- Na srpskom jeziku
+- Pozitivna i ohrabrujuća
+- Spomenuti da će kompanija kontaktirati kandidata uskoro
+```
+
+## Napomene
+
+- OpenAI API ključ je privremeno hardkodovan za potrebe zadatka
+- Aplikacija koristi mock podatke za demonstraciju
+- Sve animacije su optimizovane za performanse
+- Responsive dizajn je testiran na različitim uređajima

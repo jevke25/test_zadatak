@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { motion } from 'framer-motion'
 import Header from '../components/Header'
 import {
   getMyJobs,
@@ -127,18 +128,34 @@ export default function CompanyHome() {
     <>
       <Header />
 
-      <section className="section">
+      <motion.section 
+        className="section"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.6 }}
+      >
         <div className="container">
 
-          <div className="home-header">
+          <motion.div 
+            className="home-header"
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.2 }}
+          >
             <div>
               <h2 style={{ margin: 0 }}>Company Dashboard</h2>
               <p className="muted">Post jobs, review candidates, and manage interviews.</p>
             </div>
-          </div>
+          </motion.div>
 
           {/* Add Job */}
-          <div className="card" style={{ marginBottom: 16 }}>
+          <motion.div 
+            className="card" 
+            style={{ marginBottom: 16 }}
+            initial={{ y: 30, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.4 }}
+          >
             <h3 style={{ marginTop: 0 }}>Add Job Posting</h3>
             {addError && <div className="card" style={{ background: '#fef2f2', borderColor: '#fecaca' }}>{addError}</div>}
             <form onSubmit={onAddJob} style={{ display: 'grid', gap: 10 }}>
@@ -163,15 +180,27 @@ export default function CompanyHome() {
                 <input name="summary" className="input" placeholder="Short summary (optional)" />
               </div>
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-                <button className="btn btn-primary" type="submit" disabled={addLoading}>
+                <motion.button 
+                  className="btn btn-primary" 
+                  type="submit" 
+                  disabled={addLoading}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
                   {addLoading ? 'Publishing…' : 'Publish job'}
-                </button>
+                </motion.button>
               </div>
             </form>
-          </div>
+          </motion.div>
 
           {/* Filters + scope toggle */}
-          <div className="card" style={{ marginBottom: 12, display: 'grid', gap: 10 }}>
+          <motion.div 
+            className="card" 
+            style={{ marginBottom: 12, display: 'grid', gap: 10 }}
+            initial={{ y: 30, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.6 }}
+          >
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
               <input className="input" placeholder="Search candidate…" value={q} onChange={e => setQ(e.target.value)} />
               <select className="input" value={jobField} onChange={e => setJobField(e.target.value)}>
@@ -192,11 +221,20 @@ export default function CompanyHome() {
                 <span className="muted">Show applicants from all my jobs</span>
               </label>
             </div>
-          </div>
+          </motion.div>
 
-          <div className="company-grid">
+          <motion.div 
+            className="company-grid"
+            initial={{ y: 30, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.8 }}
+          >
             {/* Left: My postings */}
-            <div className="card">
+            <motion.div 
+              className="card"
+              whileHover={{ y: -2 }}
+              transition={{ duration: 0.2 }}
+            >
               <div className="list-head">
                 <h3 style={{ margin: 0 }}>My Job Postings</h3>
               </div>
@@ -206,25 +244,33 @@ export default function CompanyHome() {
                 <div className="card" style={{ background: '#fef2f2', borderColor: '#fecaca' }}>{jobsError}</div>
               ) : (
                 <div className="jobs-list">
-                  {jobs.map(job => (
-                    <article
+                  {jobs.map((job, index) => (
+                    <motion.article
                       key={job.id}
                       className={`job-row ${selectedJobId === job.id && !showAll ? 'active' : ''}`}
                       onClick={() => { setSelectedJobId(job.id); setSelectedAppId(null); setShowAll(false) }}
                       title={job.summary}
+                      initial={{ x: -20, opacity: 0 }}
+                      animate={{ x: 0, opacity: 1 }}
+                      transition={{ delay: 1.0 + index * 0.1 }}
+                      whileHover={{ scale: 1.02 }}
                     >
                       <div style={{ fontWeight: 700 }}>{job.title}</div>
                       <div className="muted">{job.location} • {job.type}</div>
                       <div className="muted">{job.salary}</div>
-                    </article>
+                    </motion.article>
                   ))}
                   {jobs.length === 0 && <div className="muted">No postings yet.</div>}
                 </div>
               )}
-            </div>
+            </motion.div>
 
             {/* Middle: Applicants */}
-            <div className="card">
+            <motion.div 
+              className="card"
+              whileHover={{ y: -2 }}
+              transition={{ duration: 0.2 }}
+            >
               <div className="list-head">
                 <h3 style={{ margin: 0 }}>Applicants</h3>
                 {!showAll && selectedJobId && <div className="muted">Job ID: {selectedJobId}</div>}
@@ -237,12 +283,16 @@ export default function CompanyHome() {
                 <div className="card" style={{ background: '#fef2f2', borderColor: '#fecaca' }}>{appsError}</div>
               ) : (
                 <div className="apps-list">
-                  {apps.map(a => (
-                    <article
+                  {apps.map((a, index) => (
+                    <motion.article
                       key={a.id}
                       className="card app-row clickable"
                       onClick={() => setSelectedAppId(a.id)}
                       title={a.notes || ''}
+                      initial={{ x: -20, opacity: 0 }}
+                      animate={{ x: 0, opacity: 1 }}
+                      transition={{ delay: 1.2 + index * 0.1 }}
+                      whileHover={{ scale: 1.02 }}
                     >
                       <div className="app-main">
                         <div className="app-title">
@@ -254,22 +304,32 @@ export default function CompanyHome() {
                         </div>
                       </div>
                       <span className={`badge ${String(a.status || '').toLowerCase()}`}>{a.status}</span>
-                    </article>
+                    </motion.article>
                   ))}
                   {apps.length === 0 && <div className="muted">No applicants found.</div>}
                 </div>
               )}
-            </div>
+            </motion.div>
 
             {/* Right: Candidate details */}
-            <div className="card">
+            <motion.div 
+              className="card"
+              whileHover={{ y: -2 }}
+              transition={{ duration: 0.2 }}
+            >
               <div className="list-head">
                 <h3 style={{ margin: 0 }}>Candidate Details</h3>
               </div>
               {!selectedApp ? (
                 <div className="muted">Select a candidate to view details.</div>
               ) : (
-                <div className="candidate-details" style={{ display: 'grid', gap: 10 }}>
+                <motion.div 
+                  className="candidate-details" 
+                  style={{ display: 'grid', gap: 10 }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.3 }}
+                >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <div style={{ width: 40, height: 40, borderRadius: 999, background: '#e5fbe1', display: 'grid', placeItems: 'center', fontWeight: 800 }}>
                       {(selectedApp.candidate?.full_name || selectedApp.full_name || 'C').slice(0, 1)}
@@ -284,17 +344,38 @@ export default function CompanyHome() {
                   {selectedApp.summary && !selectedApp.candidate?.summary && <p style={{ marginTop: 10 }}>{selectedApp.summary}</p>}
 
                   <div style={{ display: 'flex', gap: 10, marginTop: 10, flexWrap: 'wrap' }}>
-                    <button className="btn btn-primary" onClick={() => onStatus(selectedApp.id, 'Interview')}>Invite to interview</button>
-                    <button className="btn btn-ghost" onClick={() => onStatus(selectedApp.id, 'Offer')}>Offer</button>
-                    <button className="btn btn-ghost" onClick={() => onStatus(selectedApp.id, 'Rejected')}>Reject</button>
+                    <motion.button 
+                      className="btn btn-primary" 
+                      onClick={() => onStatus(selectedApp.id, 'Interview')}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      Invite to interview
+                    </motion.button>
+                    <motion.button 
+                      className="btn btn-ghost" 
+                      onClick={() => onStatus(selectedApp.id, 'Offer')}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      Offer
+                    </motion.button>
+                    <motion.button 
+                      className="btn btn-ghost" 
+                      onClick={() => onStatus(selectedApp.id, 'Rejected')}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      Reject
+                    </motion.button>
                   </div>
-                </div>
+                </motion.div>
               )}
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
 
         </div>
-      </section>
+      </motion.section>
     </>
   )
 }

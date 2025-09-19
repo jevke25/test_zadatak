@@ -1,5 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 
 export default function Header() {
   const navigate = useNavigate()
@@ -37,63 +38,169 @@ export default function Header() {
   function closeMenu() { setOpen(false) }
 
   return (
-    <header className="site-header">
+    <motion.header 
+      className="site-header"
+      initial={{ y: -100 }}
+      animate={{ y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
       <div className="container header-bar">
-        <Link className="logo" to="/" onClick={closeMenu}>TestZadatak</Link>
+        <motion.div
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          <Link className="logo" to="/" onClick={closeMenu}>TestZadatak</Link>
+        </motion.div>
 
         {/* Desktop nav */}
         <nav className="nav-desktop">
-          {!isCompany && <Link to="/"        >Find jobs</Link>}
-          {!isCompany && <Link to="/home"    >My applications</Link>}
-          { isCompany && <Link to="/company" >Dashboard</Link>}
+          {!isCompany && (
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Link to="/">Find jobs</Link>
+            </motion.div>
+          )}
+          {!isCompany && (
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Link to="/home">My applications</Link>
+            </motion.div>
+          )}
+          { isCompany && (
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Link to="/company">Dashboard</Link>
+            </motion.div>
+          )}
         </nav>
 
         {/* Desktop auth */}
         <div className="auth-desktop">
           {!isAuthed ? (
             <>
-              <Link className="btn btn-ghost"   to="/login">Login</Link>
-              <Link className="btn btn-primary" to="/register">Register</Link>
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Link className="btn btn-ghost" to="/login">Login</Link>
+              </motion.div>
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Link className="btn btn-primary" to="/register">Register</Link>
+              </motion.div>
             </>
           ) : (
-            <button className="btn btn-ghost" onClick={logout}>Logout</button>
+            <motion.button 
+              className="btn btn-ghost" 
+              onClick={logout}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              Logout
+            </motion.button>
           )}
         </div>
 
         {/* Hamburger (mobile) */}
-        <button
+        <motion.button
           className="hamburger"
           aria-label="Toggle menu"
           aria-expanded={open}
           onClick={() => setOpen(s => !s)}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
         >
           <span/>
           <span/>
           <span/>
-        </button>
+        </motion.button>
       </div>
 
       {/* Mobile menu */}
-      <div className={`mobile-menu ${open ? 'open' : ''}`} role="dialog" aria-modal="true">
-        <div className="mobile-menu-inner container">
-          <nav className="mobile-links" onClick={closeMenu}>
-            {!isCompany && <Link to="/">Find jobs</Link>}
-            {!isCompany && <Link to="/home">My applications</Link>}
-            { isCompany && <Link to="/company">Dashboard</Link>}
-          </nav>
+      <AnimatePresence>
+        {open && (
+          <motion.div 
+            className="mobile-menu open" 
+            role="dialog" 
+            aria-modal="true"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <motion.div 
+              className="mobile-menu-inner container"
+              initial={{ y: -20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: -20, opacity: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <nav className="mobile-links" onClick={closeMenu}>
+                {!isCompany && (
+                  <motion.div
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <Link to="/">Find jobs</Link>
+                  </motion.div>
+                )}
+                {!isCompany && (
+                  <motion.div
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <Link to="/home">My applications</Link>
+                  </motion.div>
+                )}
+                { isCompany && (
+                  <motion.div
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <Link to="/company">Dashboard</Link>
+                  </motion.div>
+                )}
+              </nav>
 
-          <div className="mobile-auth">
-            {!isAuthed ? (
-              <>
-                <Link className="btn btn-ghost"   to="/login" onClick={closeMenu}>Login</Link>
-                <Link className="btn btn-primary" to="/register" onClick={closeMenu}>Register</Link>
-              </>
-            ) : (
-              <button className="btn btn-ghost" onClick={logout}>Logout</button>
-            )}
-          </div>
-        </div>
-      </div>
-    </header>
+              <div className="mobile-auth">
+                {!isAuthed ? (
+                  <>
+                    <motion.div
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <Link className="btn btn-ghost" to="/login" onClick={closeMenu}>Login</Link>
+                    </motion.div>
+                    <motion.div
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <Link className="btn btn-primary" to="/register" onClick={closeMenu}>Register</Link>
+                    </motion.div>
+                  </>
+                ) : (
+                  <motion.button 
+                    className="btn btn-ghost" 
+                    onClick={logout}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    Logout
+                  </motion.button>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.header>
   )
 }
