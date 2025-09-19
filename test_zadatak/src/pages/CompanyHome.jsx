@@ -1,189 +1,298 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Header from '../components/Header'
+import {
+  getMyJobs,
+  createJob,
+  getApplicantsForJob,
+  getAllApplicantsAcrossJobs,
+  updateApplicationStatus
+} from '../services/company'
 
-export default function CompanyHome(){
-  // Placeholder state — kasnije zamenjujemo Xano pozivima
-  const [jobs, setJobs] = useState([
-    { id: 101, title: 'Frontend Developer', location:'Remote', type:'Full-time', salary:'$2.5k–$3.5k', summary:'React + Vite, modern UI', created_at:'2025-09-01' },
-    { id: 102, title: 'UI/UX Designer', location:'Belgrade', type:'Contract', salary:'$2k–$2.8k', summary:'Figma, design systems', created_at:'2025-09-05' },
-  ])
+export default function CompanyHome() {
+  // Jobs
+  const [jobs, setJobs] = useState([])
+  const [selectedJobId, setSelectedJobId] = useState(null)
+  const [jobsLoading, setJobsLoading] = useState(true)
+  const [jobsError, setJobsError] = useState('')
 
-  const [applicationsByJob, setApplicationsByJob] = useState({
-    101: [
-      { id: 1, user_id: 501, candidate:{ full_name:'Ana Marković', headline:'Junior FE Dev', summary:'React basics, CSS, Git' }, status:'Applied' },
-      { id: 2, user_id: 502, candidate:{ full_name:'Milan Ilić', headline:'Mid FE Dev', summary:'React, TS, Testing' }, status:'Interview' },
-    ],
-    102: [
-      { id: 3, user_id: 503, candidate:{ full_name:'Teodora Petrović', headline:'UI/UX', summary:'Wireframes, prototypes' }, status:'Applied' },
-    ]
-  })
+  // Applicants (for selected job)
+  const [apps, setApps] = useState([])
+  const [appsLoading, setAppsLoading] = useState(false)
+  const [appsError, setAppsError] = useState('')
 
-  const [selectedJobId, setSelectedJobId] = useState(101)
-  const apps = useMemo(() => applicationsByJob[selectedJobId] ?? [], [applicationsByJob, selectedJobId])
+  // All applicants toggle
+  const [showAll, setShowAll] = useState(false)
 
-  const [selectedCandidateId, setSelectedCandidateId] = useState(null)
-  const selectedCandidate = useMemo(()=>{
-    return apps.find(a => a.id === selectedCandidateId) || null
-  },[apps, selectedCandidateId])
+  // Filters
+  const [q, setQ] = useState('')
+  const [status, setStatus] = useState('')
+  const [jobField, setJobField] = useState('')
 
-  // Add job (UI only)
-  function onAddJob(e){
-    e.preventDefault()
-    const form = new FormData(e.currentTarget)
-    const title = form.get('title')?.toString().trim()
-    const location = form.get('location')?.toString().trim()
-    const type = form.get('type')?.toString()
-    const salary = form.get('salary')?.toString().trim()
-    const summary = form.get('summary')?.toString().trim()
-    if(!title) return alert('Title is required')
-    const newJob = {
-      id: Math.floor(Math.random()*100000),
-      title, location, type, salary, summary,
-      created_at: new Date().toISOString().slice(0,10)
+  // Selected candidate
+  const [selectedAppId, setSelectedAppId] = useState(null)
+
+  // Add job form state
+  const [addLoading, setAddLoading] = useState(false)
+  const [addError, setAddError] = useState('')
+
+  // Load jobs on mount
+  useEffect(() => {
+    let alive = true
+    setJobsLoading(true)
+    setJobsError('')
+    getMyJobs()
+      .then(data => {
+        if (!alive) return
+        setJobs(data || [])
+        if (data?.length && !selectedJobId) setSelectedJobId(data[0].id)
+      })
+      .catch(err => alive && setJobsError(err.message || 'Failed to load jobs'))
+      .finally(() => alive && setJobsLoading(false))
+    return () => { alive = false }
+  }, [])
+
+  // Load applicants (selected job or all)
+  useEffect(() => {
+    let alive = true
+    setAppsLoading(true)
+    setAppsError('')
+    const filters = { q, status, job_field: jobField }
+
+    const load = async () => {
+      if (showAll) {
+        const list = await getAllApplicantsAcrossJobs(filters)
+        return list
+      } else if (selectedJobId) {
+        const list = await getApplicantsForJob(selectedJobId, filters)
+        return list
+      }
+      return []
     }
-    setJobs(prev => [newJob, ...prev])
-    e.currentTarget.reset()
-    setSelectedJobId(newJob.id)
+
+    load()
+      .then(data => { if (alive) setApps(data || []) })
+      .catch(err => alive && setAppsError(err.message || 'Failed to load applicants'))
+      .finally(() => alive && setAppsLoading(false))
+
+    return () => { alive = false }
+  }, [selectedJobId, showAll, q, status, jobField])
+
+  const selectedApp = useMemo(
+    () => apps.find(a => a.id === selectedAppId) || null,
+    [apps, selectedAppId]
+  )
+
+  async function onAddJob(e) {
+    e.preventDefault()
+    setAddError('')
+    setAddLoading(true)
+    const fd = new FormData(e.currentTarget)
+    const payload = {
+      title: (fd.get('title') || '').toString().trim(),
+      location: (fd.get('location') || '').toString().trim(),
+      type: (fd.get('type') || '').toString(),
+      salary: (fd.get('salary') || '').toString().trim(),
+      summary: (fd.get('summary') || '').toString().trim(),
+      job_field: (fd.get('job_field') || '').toString()
+    }
+    if (!payload.title) { setAddError('Title is required'); setAddLoading(false); return }
+    try {
+      const created = await createJob(payload)
+      setJobs(prev => [created, ...prev])
+      setSelectedJobId(created.id)
+      e.currentTarget.reset()
+    } catch (err) {
+      setAddError(err.message || 'Failed to create job')
+    } finally {
+      setAddLoading(false)
+    }
   }
 
-  // Edit job inline (title only for demo)
-  function updateJobTitle(id, nextTitle){
-    setJobs(prev => prev.map(j => j.id===id ? {...j, title: nextTitle} : j))
-  }
-
-  // Company actions on candidate
-  function setStatus(appId, next){
-    setApplicationsByJob(prev => {
-      const copy = {...prev}
-      copy[selectedJobId] = (copy[selectedJobId]||[]).map(a => a.id===appId ? {...a, status: next} : a)
-      return copy
-    })
+  async function onStatus(appId, next) {
+    try {
+      await updateApplicationStatus(appId, next)
+      // local update
+      setApps(prev => prev.map(a => a.id === appId ? { ...a, status: next } : a))
+      if (selectedAppId === appId) {
+        // keep details in sync
+        const updated = apps.find(a => a.id === appId)
+        if (updated) updated.status = next
+      }
+    } catch (err) {
+      alert(err.message || 'Failed to update status')
+    }
   }
 
   return (
     <>
-      <Header/>
+      <Header />
 
       <section className="section">
         <div className="container">
 
           <div className="home-header">
             <div>
-              <h2 style={{margin:0}}>Company Dashboard</h2>
+              <h2 style={{ margin: 0 }}>Company Dashboard</h2>
               <p className="muted">Post jobs, review candidates, and manage interviews.</p>
             </div>
           </div>
 
-          {/* Add Job Posting */}
-          <div className="card" style={{marginBottom:16}}>
-            <h3 style={{marginTop:0}}>Add Job Posting</h3>
-            <form onSubmit={onAddJob} style={{display:'grid', gap:10}}>
-              <div style={{display:'grid', gridTemplateColumns:'2fr 1fr 1fr', gap:10}}>
+          {/* Add Job */}
+          <div className="card" style={{ marginBottom: 16 }}>
+            <h3 style={{ marginTop: 0 }}>Add Job Posting</h3>
+            {addError && <div className="card" style={{ background: '#fef2f2', borderColor: '#fecaca' }}>{addError}</div>}
+            <form onSubmit={onAddJob} style={{ display: 'grid', gap: 10 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: 10 }}>
                 <input name="title" className="input" placeholder="Job title *" required />
                 <input name="location" className="input" placeholder="Location" />
-                <select name="type" className="input">
-                  <option value="Full-time">Full-time</option>
-                  <option value="Part-time">Part-time</option>
-                  <option value="Contract">Contract</option>
-                  <option value="Internship">Internship</option>
+                <select name="type" className="input" defaultValue="Full-time">
+                  <option>Full-time</option>
+                  <option>Part-time</option>
+                  <option>Contract</option>
+                  <option>Internship</option>
+                </select>
+                <select name="job_field" className="input" defaultValue="">
+                  <option value="">Field…</option>
+                  <option>Development</option>
+                  <option>Design</option>
+                  <option>Marketing</option>
                 </select>
               </div>
-              <div style={{display:'grid', gridTemplateColumns:'1fr 3fr', gap:10}}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 3fr', gap: 10 }}>
                 <input name="salary" className="input" placeholder="Salary range e.g. $2k–$3k" />
                 <input name="summary" className="input" placeholder="Short summary (optional)" />
               </div>
-              <div style={{display:'flex', justifyContent:'flex-end', gap:10}}>
-                <button className="btn btn-primary" type="submit">Publish job</button>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+                <button className="btn btn-primary" type="submit" disabled={addLoading}>
+                  {addLoading ? 'Publishing…' : 'Publish job'}
+                </button>
               </div>
             </form>
           </div>
 
-          {/* My Job Postings + Candidates */}
+          {/* Filters + scope toggle */}
+          <div className="card" style={{ marginBottom: 12, display: 'grid', gap: 10 }}>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              <input className="input" placeholder="Search candidate…" value={q} onChange={e => setQ(e.target.value)} />
+              <select className="input" value={jobField} onChange={e => setJobField(e.target.value)}>
+                <option value="">All fields</option>
+                <option>Development</option>
+                <option>Design</option>
+                <option>Marketing</option>
+              </select>
+              <select className="input" value={status} onChange={e => setStatus(e.target.value)}>
+                <option value="">All statuses</option>
+                <option>Applied</option>
+                <option>Interview</option>
+                <option>Offer</option>
+                <option>Rejected</option>
+              </select>
+              <label style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <input type="checkbox" checked={showAll} onChange={e => setShowAll(e.target.checked)} />
+                <span className="muted">Show applicants from all my jobs</span>
+              </label>
+            </div>
+          </div>
+
           <div className="company-grid">
             {/* Left: My postings */}
             <div className="card">
               <div className="list-head">
-                <h3 style={{margin:0}}>My Job Postings</h3>
+                <h3 style={{ margin: 0 }}>My Job Postings</h3>
               </div>
-              <div className="jobs-list">
-                {jobs.map(job=>(
-                  <article
-                    key={job.id}
-                    className={`job-row ${selectedJobId===job.id ? 'active' : ''}`}
-                    onClick={()=>{ setSelectedJobId(job.id); setSelectedCandidateId(null); }}
-                  >
-                    <input
-                      className="input job-title-input"
-                      value={job.title}
-                      onChange={e=>updateJobTitle(job.id, e.target.value)}
-                    />
-                    <div className="muted">{job.location} • {job.type}</div>
-                    <div className="muted">{job.salary}</div>
-                  </article>
-                ))}
-                {jobs.length===0 && <div className="muted">No postings yet.</div>}
-              </div>
+              {jobsLoading ? (
+                <div className="muted">Loading jobs…</div>
+              ) : jobsError ? (
+                <div className="card" style={{ background: '#fef2f2', borderColor: '#fecaca' }}>{jobsError}</div>
+              ) : (
+                <div className="jobs-list">
+                  {jobs.map(job => (
+                    <article
+                      key={job.id}
+                      className={`job-row ${selectedJobId === job.id && !showAll ? 'active' : ''}`}
+                      onClick={() => { setSelectedJobId(job.id); setSelectedAppId(null); setShowAll(false) }}
+                      title={job.summary}
+                    >
+                      <div style={{ fontWeight: 700 }}>{job.title}</div>
+                      <div className="muted">{job.location} • {job.type}</div>
+                      <div className="muted">{job.salary}</div>
+                    </article>
+                  ))}
+                  {jobs.length === 0 && <div className="muted">No postings yet.</div>}
+                </div>
+              )}
             </div>
 
-            {/* Middle: Candidates for selected job */}
+            {/* Middle: Applicants */}
             <div className="card">
               <div className="list-head">
-                <h3 style={{margin:0}}>Applicants</h3>
-                <div className="muted">Job ID: {selectedJobId}</div>
+                <h3 style={{ margin: 0 }}>Applicants</h3>
+                {!showAll && selectedJobId && <div className="muted">Job ID: {selectedJobId}</div>}
+                {showAll && <div className="muted">All my jobs</div>}
               </div>
 
-              <div className="apps-list">
-                {apps.map(a=>(
-                  <article
-                    key={a.id}
-                    className={`card app-row clickable`}
-                    onClick={()=>setSelectedCandidateId(a.id)}
-                  >
-                    <div className="app-main">
-                      <div className="app-title">{a.candidate.full_name}</div>
-                      <div className="muted">{a.candidate.headline}</div>
-                    </div>
-                    <span className={`badge ${a.status.toLowerCase()}`}>{a.status}</span>
-                  </article>
-                ))}
-                {apps.length===0 && <div className="muted">No applicants yet.</div>}
-              </div>
+              {appsLoading ? (
+                <div className="muted">Loading applicants…</div>
+              ) : appsError ? (
+                <div className="card" style={{ background: '#fef2f2', borderColor: '#fecaca' }}>{appsError}</div>
+              ) : (
+                <div className="apps-list">
+                  {apps.map(a => (
+                    <article
+                      key={a.id}
+                      className="card app-row clickable"
+                      onClick={() => setSelectedAppId(a.id)}
+                      title={a.notes || ''}
+                    >
+                      <div className="app-main">
+                        <div className="app-title">
+                          {/* Ako Xano vraća candidate info kroz join, koristi npr. a.candidate.full_name */}
+                          {a.candidate?.full_name || a.full_name || a.user_name || 'Candidate'}
+                        </div>
+                        <div className="muted">
+                          {(a.__job?.title || a.job_title) ? (a.__job?.title || a.job_title) : 'Job'}{a.__job?.location ? ` • ${a.__job.location}` : ''}
+                        </div>
+                      </div>
+                      <span className={`badge ${String(a.status || '').toLowerCase()}`}>{a.status}</span>
+                    </article>
+                  ))}
+                  {apps.length === 0 && <div className="muted">No applicants found.</div>}
+                </div>
+              )}
             </div>
 
             {/* Right: Candidate details */}
             <div className="card">
               <div className="list-head">
-                <h3 style={{margin:0}}>Candidate Details</h3>
+                <h3 style={{ margin: 0 }}>Candidate Details</h3>
               </div>
-
-              {!selectedCandidate ? (
+              {!selectedApp ? (
                 <div className="muted">Select a candidate to view details.</div>
               ) : (
-                <div className="candidate-details">
-                  <div style={{display:'flex', alignItems:'center', gap:10}}>
-                    <div style={{width:40,height:40,borderRadius:999,background:'#e5fbe1',display:'grid',placeItems:'center',fontWeight:800}}>
-                      {selectedCandidate.candidate.full_name.slice(0,1)}
+                <div className="candidate-details" style={{ display: 'grid', gap: 10 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ width: 40, height: 40, borderRadius: 999, background: '#e5fbe1', display: 'grid', placeItems: 'center', fontWeight: 800 }}>
+                      {(selectedApp.candidate?.full_name || selectedApp.full_name || 'C').slice(0, 1)}
                     </div>
                     <div>
-                      <div style={{fontWeight:800}}>{selectedCandidate.candidate.full_name}</div>
-                      <div className="muted">{selectedCandidate.candidate.headline}</div>
+                      <div style={{ fontWeight: 800 }}>{selectedApp.candidate?.full_name || selectedApp.full_name || 'Candidate'}</div>
+                      <div className="muted">{selectedApp.candidate?.headline || selectedApp.headline || ''}</div>
                     </div>
                   </div>
-                  <p style={{marginTop:10}}>{selectedCandidate.candidate.summary}</p>
 
-                  <div style={{display:'flex', gap:10, marginTop:10}}>
-                    <button className="btn btn-primary" onClick={()=>setStatus(selectedCandidate.id, 'Interview')}>
-                      Invite to interview
-                    </button>
-                    <button className="btn btn-ghost" onClick={()=>setStatus(selectedCandidate.id, 'Rejected')}>
-                      Reject
-                    </button>
+                  {selectedApp.candidate?.summary && <p style={{ marginTop: 10 }}>{selectedApp.candidate.summary}</p>}
+                  {selectedApp.summary && !selectedApp.candidate?.summary && <p style={{ marginTop: 10 }}>{selectedApp.summary}</p>}
+
+                  <div style={{ display: 'flex', gap: 10, marginTop: 10, flexWrap: 'wrap' }}>
+                    <button className="btn btn-primary" onClick={() => onStatus(selectedApp.id, 'Interview')}>Invite to interview</button>
+                    <button className="btn btn-ghost" onClick={() => onStatus(selectedApp.id, 'Offer')}>Offer</button>
+                    <button className="btn btn-ghost" onClick={() => onStatus(selectedApp.id, 'Rejected')}>Reject</button>
                   </div>
                 </div>
               )}
             </div>
-
           </div>
+
         </div>
       </section>
     </>

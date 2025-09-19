@@ -10,24 +10,19 @@ function headers(auth = false) {
   return h
 }
 
-async function req(base, path, { method='GET', body, auth=false } = {}) {
-  const res = await fetch(`${base}${path}`, {
-    method,
-    headers: headers(auth),
-    body: body ? JSON.stringify(body) : undefined
-  })
-  let data
+async function req(base, path, opts = {}) {
+  const res = await fetch(`${base}${path}`, { headers: headers(opts.auth), ...opts })
+  let data = {}
   try { data = await res.json() } catch (_) {}
-  if (!res.ok) {
-    const msg = data?.message || data?.error || `HTTP ${res.status}`
-    throw new Error(msg)
-  }
+  if (!res.ok) throw new Error(data?.message || data?.error || `HTTP ${res.status}`)
   return data
 }
 
-// AUTH endpoints
-export const registerUser = (payload) => req(AUTH_BASE, '/auth/signup', { method: 'POST', body: payload })
-export const loginUser    = (payload) => req(AUTH_BASE, '/auth/login',  { method: 'POST', body: payload })
+// AUTH
+export const registerUser = (payload) =>
+  req(AUTH_BASE, '/auth/signup', { method: 'POST', body: JSON.stringify(payload) })
+// očekuje { authToken, role } ili { authToken, role, ... }
 
-// Primeri za kasnije:
-export const getJobs      = (q='') => req(API_BASE, `/jobs${q ? `?q=${encodeURIComponent(q)}` : ''}`)
+export const loginUser = (payload) =>
+  req(AUTH_BASE, '/auth/login', { method: 'POST', body: JSON.stringify(payload) })
+
